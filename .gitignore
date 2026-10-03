@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.next/
+.next-*/
+build/
+coverage/
+*.tsbuildinfo
+.env
+.env.local
+.env.production
+!.env.example
+uploads/
+logs/
+backups/
+*.log
+*.bak
+.DS_Store
