@@ -10,13 +10,8 @@ import * as path from 'path';
 /**
  * UNDERNET.ONE — rozruch API.
  *
- * Prostsze niż w xdtv o dwie rzeczy, bo obu tu nie ma:
- *  - obchodzenie parsera ciała dla ścieżek /admin (panel jest wspólny
- *    i mieszka w backendzie xdtv, ten proces go nie montuje),
- *  - Bull Board pod /admin/queues (jw.).
- *
- * Kolejki działają dalej — brakuje tylko ich podglądu, który i tak jest
- * jeden dla obu serwisów.
+ * Proces nie montuje panelu administracyjnego ani Bull Board — kolejki
+ * działają, nie mają tylko podglądu.
  */
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

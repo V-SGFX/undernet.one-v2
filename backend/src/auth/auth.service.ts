@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
@@ -167,69 +167,6 @@ export class AuthService {
     this.mail.sendPasswordResetEmail(email, user.username, passwordResetToken)
       .catch((e) => this.logger.error(`Reset hasła: nie wysłano na ${email}: ${e?.message}`));
     return msg;
-  }
-
-  /**
-   * Wymuszony reset hasła — z panelu administracyjnego.
-   *
-   * Różni się od „zapomniałem hasła" dwiema rzeczami, i obie są celowe:
-   *
-   *  1. UNIEWAŻNIA bieżące hasło. Zwykły reset zostawia stare działające,
-   *     dopóki ktoś nie użyje linku — a administrator sięga po tę funkcję
-   *     zwykle wtedy, gdy chce odciąć dostęp NATYCHMIAST.
-   *  2. Nie ukrywa, czy konto istnieje. Enumeracja adresów ma sens przy
-   *     formularzu publicznym; tutaj po drugiej stronie stoi już
-   *     zalogowany administrator, a cicha odmowa oznaczałaby, że nie wie,
-   *     czy operacja się udała.
-   *
-   * Hasła nie ustawiamy ani nie pokazujemy nikomu — użytkownik nadaje je
-   * sobie sam przez link. Administrator nie musi go znać, żeby go zmienić.
-   */
-  async adminForcePasswordReset(userId: number) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('Nie ma użytkownika o tym numerze');
-
-    const passwordResetToken = randomBytes(32).toString('hex');
-    const passwordResetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    /*
-     * Najpierw list, potem unieważnienie hasła.
-     *
-     * Odwrotna kolejność przy niedziałającej poczcie zamykałaby konto bez
-     * żadnej drogi powrotu: stare hasło już nie działa, a linku nikt nie
-     * dostał. Jeśli wysyłka padnie, hasło zostaje takie, jakie było.
-     */
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { passwordResetToken, passwordResetExpires },
-    });
-
-    /*
-     * Niepowodzenie wysyłki musi wrócić jako czytelny powód, nie jako 500.
-     * Administrator ma się dowiedzieć, że poczta nie działa — inaczej
-     * zobaczy „Internal server error" i nie będzie wiedział, czy hasło
-     * zostało zmienione, czy nie.
-     */
-    try {
-      await this.mail.sendPasswordResetEmail(user.email, user.username, passwordResetToken);
-    } catch (e: any) {
-      throw new BadRequestException(
-        `Nie udało się wysłać listu na ${user.email} — hasło pozostało bez zmian. ` +
-        `Sprawdź konfigurację SMTP. Powód: ${e?.message ?? 'nieznany'}`,
-      );
-    }
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash: null },
-    });
-
-    return {
-      ok: true,
-      email: user.email,
-      username: user.username,
-      expiresAt: passwordResetExpires,
-    };
   }
 
   async resetPassword(token: string, newPassword: string) {

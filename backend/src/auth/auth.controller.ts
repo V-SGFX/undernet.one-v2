@@ -1,7 +1,4 @@
-import {
-  Controller, Post, Get, Body, Req, Query, Headers, UseGuards,
-  HttpCode, BadRequestException, UnauthorizedException,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -38,31 +35,6 @@ export class AuthController {
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
-  }
-
-  /**
-   * Wymuszony reset hasła, wołany przez wspólny panel administracyjny.
-   *
-   * Panel stoi w backendzie xdtv i sięga do bazy undernetu drugim klientem
-   * Prismy — ale wysyłka poczty należy do TEGO serwisu: to stąd idzie
-   * właściwy nadawca, właściwy szablon i link na undernet.one. Dlatego
-   * panel woła ten adres zamiast pisać po bazie na własną rękę.
-   *
-   * Chronione osobnym sekretem, nie tokenem użytkownika: po drugiej
-   * stronie nie stoi konto undernetu, tylko inny nasz proces.
-   */
-  @Post('admin/force-password-reset')
-  @HttpCode(200)
-  async adminForcePasswordReset(
-    @Body() body: { userId?: number },
-    @Headers('x-admin-secret') secret: string | undefined,
-  ) {
-    const expected = process.env.ADMIN_API_SECRET;
-    if (!expected || secret !== expected) {
-      throw new UnauthorizedException('Nieprawidłowy sekret');
-    }
-    if (!body?.userId) throw new BadRequestException('Podaj userId');
-    return this.authService.adminForcePasswordReset(Number(body.userId));
   }
 
   @Post('reset-password')
