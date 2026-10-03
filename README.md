@@ -135,5 +135,5 @@ Można ją wyłączyć z góry: `INSTALL_NO_TELEMETRY=1 ./install.sh`.
 
 ## Licencja
 
-Kod udostępniony do wglądu. Wszystkie prawa zastrzeżone — jeśli chcesz
-go wykorzystać, napisz przez [undernet.one](https://undernet.one).
+Kod udostępniony do wglądu. Wszystkie prawa zastrzeżone. W sprawie
+wykorzystania napisz przez GitHub: [@V-SGFX](https://github.com/V-SGFX).
